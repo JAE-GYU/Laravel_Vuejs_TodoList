@@ -3,56 +3,10 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Todo;
+use App\User;
 
-class TodoController extends Controller
-{
-    /**
-     * Display a listing of the resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
-    public function index()
-    {        
-        $reqestQuery = request()->query();
-        array_key_exists('page', $reqestQuery) ? $page = $reqestQuery['page'] : $page = 1;
-        array_key_exists('perPage', $reqestQuery) ? $perPage = $reqestQuery['perPage'] : $perPage =15;
-
-        if (!is_numeric($page) || !is_numeric($perPage)) {
-            return response()->json([
-                'error' => [
-                    'code' => 400,
-                    'message' => [
-                        'invalid query string'
-                    ],
-                ]
-            ],400,[],JSON_UNESCAPED_UNICODE);
-        }
-
-        $totalNum = Todo::count();
-        $totalPage = ceil($totalNum/$perPage);                
-
-        if ($totalPage < $page) {
-            return response()->json([
-                'error' => [
-                    'code' => 400,
-                    'message' => [
-                        'page does not exist'
-                    ],
-                ]
-            ],400,[],JSON_UNESCAPED_UNICODE);    
-        }
-
-        $result = Todo::where('id','>',(($page -1 ) * $perPage))->limit($perPage)->get();
-        
-        return response()->json([
-            'data' => [
-                'code' => 200,
-                'message' => $result,
-            ]
-        ],200,[],JSON_UNESCAPED_UNICODE); 
-    }
-
+class UserController extends Controller
+{    
     /**
      * Store a newly created resource in storage.
      *
@@ -66,7 +20,7 @@ class TodoController extends Controller
         $validator = $this->validateVal($inputVal,'store');
 
         if ($validator['status']) {
-            $id = Todo::create($request->all())->id;
+            $id = User::create($request->all())->id;
             return response()->json([
                 'data' => [
                     'code' => 200,
@@ -107,7 +61,7 @@ class TodoController extends Controller
             ],400,[],JSON_UNESCAPED_UNICODE);
         }
 
-        $result = Todo::find($id);
+        $result = User::find($id);
         if ($result) {
             return response()->json([
                 'data' => [
@@ -141,7 +95,7 @@ class TodoController extends Controller
         $validator = $this->validateVal($inputVal,'update');
 
         if ($validator['status']) {
-            $result = Todo::find($id);
+            $result = User::find($id);
 
             if ($result) {
                 $result->update($inputVal);
@@ -175,8 +129,6 @@ class TodoController extends Controller
                 ]
             ],400,[],JSON_UNESCAPED_UNICODE);
         }
-
-
     }
 
     /**
@@ -198,7 +150,7 @@ class TodoController extends Controller
             ],400,[],JSON_UNESCAPED_UNICODE);
         }
 
-        $result = Todo::find($id);
+        $result = User::find($id);
         if ($result) {
             $result->delete();
             return response()->json([
@@ -232,18 +184,37 @@ class TodoController extends Controller
         switch ($type) {
             case 'store':
                 $rules = [                    
-                    'task' => ['required'],                    
-                    'category' => ['required']       
+                    'name' => ['required','regex:/[a-zA-Z가-힣]/','max:10'],
+                    'email' => ['required','email','unique:users,email'],
+                    'password' => ['required','confirmed'],            
+                    'password_confirmation' => ['required'],
                 ];
                 break;
             case 'update':
-                $rules = [];
+                $rules = [
+                    'name' => ['regex:/[a-zA-Z가-힣]/','max:10'],
+                    'email' => ['email','unique:users,email'],
+                    'password' => ['confirmed'],                                
+                ];
+                break;
+            case 'login':
+                $rules = [                    
+                    'email' => ['required','email'],
+                    'password' => ['required'],            
+                ];
                 break;
         }
 
-        $messages = [            
-            'task.required' => '할 일을 입력해주세요.',            
-            'category.required' => '카테고리를 입력해주세요.',
+        $messages = [
+            'name.required' => '이름을 입력해주세요.',
+            'name.regex' => '이름은 영문, 한글만 가능합니다.',
+            'name.max' => '이름의 최대 길이는 10글자입니다.',
+            'email.required' => '이메일을 입력해주세요.',
+            'email.email' => '이메일이 형식에 맞지 않습니다.',
+            'email.unique' => '이미 가입된 이메일입니다.',
+            'password.required' => '비밀번호를 입력해주세요',
+            'password.confirmed' => '비밀번호 확인이 일치하지 않습니다.',
+            'password_confirmation.required' => '비밀번호 확인란을 입력해주세요.',
         ];
 
         $validator = \Validator::make($data, $rules, $messages);
