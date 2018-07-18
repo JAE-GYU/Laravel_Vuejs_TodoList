@@ -7,6 +7,24 @@ use App\User;
 
 class UserController extends Controller
 {    
+    
+    /**
+     * login
+     *
+     * @param Request $request
+     * @return void
+     */
+    public function login(Request $request) {
+        $inputVal = $request->all();
+        $validator = $this->validateVal($inputVal, 'login');
+
+        if ($validator['status']) {
+
+        }else {
+            
+        }
+    }
+
     /**
      * Store a newly created resource in storage.
      *
