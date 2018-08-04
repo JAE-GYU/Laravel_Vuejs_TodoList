@@ -1,9 +1,10 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\API;
 
 use Illuminate\Http\Request;
 use App\Todo;
+use App\Http\Controllers\Controller;
 
 class TodoController extends Controller
 {
@@ -15,9 +16,9 @@ class TodoController extends Controller
     public function index()
     {        
         $reqestQuery = request()->query();
-        array_key_exists('page', $reqestQuery) ? $page = $reqestQuery['page'] : $page = 1;
+        array_key_exists('page', $reqestQuery) ? $page = $reqestQuery['page'] : $page = 0;
         array_key_exists('perPage', $reqestQuery) ? $perPage = $reqestQuery['perPage'] : $perPage =15;
-
+        
         if (!is_numeric($page) || !is_numeric($perPage)) {
             return response()->json([
                 'error' => [

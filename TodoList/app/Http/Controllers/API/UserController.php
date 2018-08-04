@@ -1,9 +1,10 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\API;
 
 use Illuminate\Http\Request;
 use App\User;
+use App\Http\Controllers\Controller;
 
 class UserController extends Controller
 {    
@@ -12,16 +13,37 @@ class UserController extends Controller
      * login
      *
      * @param Request $request
-     * @return void
+     * @return \lluminate\Http\Response
      */
     public function login(Request $request) {
         $inputVal = $request->all();
         $validator = $this->validateVal($inputVal, 'login');
-
-        if ($validator['status']) {
-
-        }else {
             
+        if ($validator['status']) {
+            $client = \DB::table('oauth_clients')
+            ->where('password_client', true)
+            ->first();            
+
+            $data = [
+                'grant_type' => 'password',
+                'client_id' => $client->id,
+                'client_secret' => $client->secret,
+                'username' => request('email'),
+                'password' => request('password'),
+            ]; 
+
+            $request = Request::create('/oauth/token', 'POST', $data);            
+
+            return app()->handle($request);
+        }else {
+            return response()->json([
+                'error' => [
+                    'code' => 400,
+                    'message' => [
+                        $validator['errors']
+                    ],
+                ]
+            ],400,[],JSON_UNESCAPED_UNICODE);
         }
     }
 
@@ -37,8 +59,10 @@ class UserController extends Controller
 
         $validator = $this->validateVal($inputVal,'store');
 
+        $inputVal['password'] = bcrypt($inputVal['password']);        
+
         if ($validator['status']) {
-            $id = User::create($request->all())->id;
+            $id = User::create($inputVal)->id;
             return response()->json([
                 'data' => [
                     'code' => 200,
